@@ -20,106 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOpenAIRealtime } from "@/hooks/useOpenAIRealtime";
-
-// Componente do Visualizador JARVIS
-const JarvisVisualizer = ({ isRecording, isConnected, audioLevel }: { 
-  isRecording: boolean; 
-  isConnected: boolean; 
-  audioLevel: number; 
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
-  const barsRef = useRef(Array.from({ length: 32 }, () => Math.random() * 0.5));
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const draw = () => {
-      const { width, height } = canvas;
-      ctx.clearRect(0, 0, width, height);
-
-      // Background circle
-      ctx.strokeStyle = isConnected ? '#00ff88' : '#444';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(width / 2, height / 2, Math.min(width, height) / 2 - 10, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Audio bars in circle
-      const bars = barsRef.current;
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const radius = Math.min(width, height) / 3;
-
-      bars.forEach((bar, i) => {
-        const angle = (i / bars.length) * Math.PI * 2;
-        const intensity = isRecording ? (bar + audioLevel) : bar * 0.3;
-        
-        const startX = centerX + Math.cos(angle) * radius;
-        const startY = centerY + Math.sin(angle) * radius;
-        const endX = centerX + Math.cos(angle) * (radius + intensity * 60);
-        const endY = centerY + Math.sin(angle) * (radius + intensity * 60);
-
-        ctx.strokeStyle = isRecording ? '#00ff88' : (isConnected ? '#0088ff' : '#444');
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
-
-        // Animate bars
-        bars[i] += (Math.random() - 0.5) * 0.1;
-        bars[i] = Math.max(0.1, Math.min(1, bars[i]));
-      });
-
-      // Center glow
-      if (isConnected) {
-        const glowSize = isRecording ? 20 + audioLevel * 30 : 15;
-        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, glowSize);
-        gradient.addColorStop(0, isRecording ? 'rgba(0, 255, 136, 0.8)' : 'rgba(0, 136, 255, 0.6)');
-        gradient.addColorStop(1, 'rgba(0, 255, 136, 0)');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, glowSize, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      animationRef.current = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [isRecording, isConnected, audioLevel]);
-
-  return (
-    <div className="relative">
-      <canvas
-        ref={canvasRef}
-        width={200}
-        height={200}
-        className="w-full h-full"
-      />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className={cn(
-          "w-4 h-4 rounded-full transition-all duration-300",
-          isConnected ? (isRecording ? "bg-green-500 animate-pulse" : "bg-blue-500") : "bg-gray-500"
-        )} />
-      </div>
-    </div>
-  );
-};
+import AlineVisualizer from "./AlineVisualizer";
 
 const RealtimeConsole = () => {
   const API_KEY = "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";
@@ -201,7 +102,7 @@ const RealtimeConsole = () => {
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
               <div className="w-4 h-4 rounded-full bg-primary/20" />
             </div>
-            <h1 className="text-lg font-medium">JARVIS Realtime Console</h1>
+            <h1 className="text-lg font-medium">Aline Realtime Console</h1>
           </div>
           
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -216,11 +117,11 @@ const RealtimeConsole = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex">
-        {/* Visualizador JARVIS Central */}
-        <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30">
-          <div className="w-80 h-80 mb-8">
-            <JarvisVisualizer 
+      <div className="flex-1 flex relative">
+        {/* Visualizador Aline Fixo */}
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+          <div className="w-64 h-64">
+            <AlineVisualizer 
               isRecording={isRecording} 
               isConnected={isConnected} 
               audioLevel={audioLevel} 
@@ -228,7 +129,7 @@ const RealtimeConsole = () => {
           </div>
           
           {/* Status e Transcrição */}
-          <div className="text-center space-y-4 max-w-2xl px-8">
+          <div className="text-center space-y-4 mt-8">
             <div className="flex items-center justify-center gap-2 text-lg">
               <div className={cn(
                 "w-3 h-3 rounded-full",
@@ -238,25 +139,28 @@ const RealtimeConsole = () => {
                 "font-medium",
                 isConnected ? "text-green-600" : "text-red-600"
               )}>
-                {isConnected ? "JARVIS Online" : "JARVIS Offline"}
+                {isConnected ? "Aline Online" : "Aline Offline"}
               </span>
             </div>
             
             {currentTranscription && (
-              <div className="p-4 bg-card border rounded-lg">
-                <p className="text-lg font-mono text-center">
+              <div className="p-4 bg-card border rounded-lg max-w-md">
+                <p className="text-sm font-mono text-center">
                   "{currentTranscription}"
                 </p>
               </div>
             )}
             
             {!currentTranscription && isConnected && (
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {isRecording ? "Listening..." : "Ready to listen"}
               </p>
             )}
           </div>
         </div>
+
+        {/* Área de fundo */}
+        <div className="flex-1 bg-gradient-to-br from-background to-muted/30"></div>
 
         {/* Painel de Controles */}
         <div className="w-80 bg-card border-l flex flex-col">
