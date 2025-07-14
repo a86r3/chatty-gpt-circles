@@ -65,6 +65,12 @@ const RealtimeConsole = () => {
       disconnect();
     } else {
       await connectRealtime();
+      // Auto-habilitar microfone após conectar
+      setTimeout(() => {
+        if (!isRecording) {
+          startRecording();
+        }
+      }, 1000);
     }
   };
 
