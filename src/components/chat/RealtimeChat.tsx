@@ -85,7 +85,7 @@ const RealtimeChat = () => {
   };
 
   return (
-    <div className="h-screen bg-gradient-background flex">
+    <div className="h-screen bg-gradient-to-b from-background to-muted flex">
       {/* Main Console */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
@@ -134,7 +134,7 @@ const RealtimeChat = () => {
                     "h-12 px-8",
                     isConnected 
                       ? "bg-red-500 hover:bg-red-600" 
-                      : "bg-gradient-primary"
+                      : "bg-primary hover:bg-primary/90"
                   )}
                 >
                   {isConnected ? (
@@ -174,7 +174,7 @@ const RealtimeChat = () => {
                         "h-20 w-20 rounded-full transition-all duration-200",
                         isRecording 
                           ? "bg-red-500 hover:bg-red-600 scale-110 animate-pulse" 
-                          : "bg-gradient-primary hover:scale-105"
+                          : "bg-primary hover:bg-primary/90 hover:scale-105"
                       )}
                     >
                       {isRecording ? (
@@ -227,7 +227,7 @@ const RealtimeChat = () => {
                   <Button 
                     onClick={handleTextSubmit}
                     disabled={!inputText.trim()}
-                    className="bg-gradient-primary"
+                    className="bg-primary hover:bg-primary/90"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
