@@ -1,6 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import type { AlineConfig } from '@/contexts/AlineConfigContext';
 
 interface RealtimeEvent {
   type: string;
@@ -10,11 +9,10 @@ interface RealtimeEvent {
 
 interface UseOpenAIRealtimeProps {
   apiKey: string;
-  config?: AlineConfig;
   onEvent?: (event: RealtimeEvent) => void;
 }
 
-export const useOpenAIRealtime = ({ apiKey, config, onEvent }: UseOpenAIRealtimeProps) => {
+export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) => {
   const { toast } = useToast();
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -43,8 +41,7 @@ export const useOpenAIRealtime = ({ apiKey, config, onEvent }: UseOpenAIRealtime
 
   const connectRealtime = useCallback(async () => {
     try {
-      const model = config?.model || 'gpt-4o-realtime-preview-2024-10-01';
-      const wsUrl = `wss://api.openai.com/v1/realtime?model=${model}`;
+      const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
       const ws = new WebSocket(wsUrl, [
         'realtime',
         `openai-insecure-api-key.${apiKey}`,
@@ -56,52 +53,28 @@ export const useOpenAIRealtime = ({ apiKey, config, onEvent }: UseOpenAIRealtime
         setIsConnected(true);
         addEvent('connection.established', { url: wsUrl });
 
-        // Configurar sessão com configurações personalizadas
+        // Configurar sessão
         const sessionConfig = {
           type: 'session.update',
           session: {
             modalities: ['text', 'audio'],
-            instructions: config?.instructions || 'Você é um assistente útil que conversa em português brasileiro. Seja natural, amigável e responda de forma clara e concisa.',
-            voice: config?.voice || 'alloy',
-            input_audio_format: config?.inputAudioFormat || 'pcm16',
-            output_audio_format: config?.outputAudioFormat || 'pcm16',
+            instructions: 'Você é a Aline, uma assistente de voz inteligente que conversa em português brasileiro. Seja natural, amigável e responda de forma clara e concisa.',
+            voice: 'alloy',
+            input_audio_format: 'pcm16',
+            output_audio_format: 'pcm16',
             input_audio_transcription: {
               model: 'whisper-1'
             },
             turn_detection: {
               type: 'server_vad',
-              threshold: config?.vadThreshold || 0.3,
-              prefix_padding_ms: config?.vadPrefixPadding || 600,
-              silence_duration_ms: config?.vadSilenceDuration || 1500
-            },
-            ...(config?.toolUse && {
-              tools: []
-            })
+              threshold: 0.3,
+              prefix_padding_ms: 600,
+              silence_duration_ms: 1500
+            }
           }
         };
 
         ws.send(JSON.stringify(sessionConfig));
-
-        // Enviar primeira mensagem se configurada
-        if (config?.firstMessage) {
-          setTimeout(() => {
-            ws.send(JSON.stringify({
-              type: 'conversation.item.create',
-              item: {
-                type: 'message',
-                role: 'assistant',
-                content: [{
-                  type: 'text',
-                  text: config.firstMessage
-                }]
-              }
-            }));
-            
-            ws.send(JSON.stringify({
-              type: 'response.create'
-            }));
-          }, 500);
-        }
 
         toast({
           title: 'Conectado!',
@@ -147,7 +120,7 @@ export const useOpenAIRealtime = ({ apiKey, config, onEvent }: UseOpenAIRealtime
         variant: 'destructive'
       });
     }
-  }, [apiKey, config, addEvent, toast]);
+  }, [apiKey, addEvent, toast]);
 
   const handleRealtimeMessage = useCallback((message: any) => {
     console.log('Realtime message:', message.type);
