@@ -1,11 +1,61 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Settings, User, Volume2, Mic } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Settings, User, Volume2, Mic, Save, Edit3 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const ConfigurationsPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  // Estado local para as configurações
+  const [isEditingPersonality, setIsEditingPersonality] = useState(false);
+  const [personalityInstructions, setPersonalityInstructions] = useState(() => {
+    return localStorage.getItem('aline-personality') || 
+    `Você é a Aline, uma assistente de voz inteligente que conversa em português brasileiro. 
+
+Características principais:
+- Seja natural, amigável e responda de forma clara e concisa
+- Demonstre curiosidade e interesse genuíno pelas conversas
+- Use um tom caloroso e acolhedor
+- Seja prestativa e sempre tente ajudar
+- Mantenha conversas envolventes e interessantes
+
+Instruções específicas:
+- Responda sempre em português brasileiro
+- Use linguagem natural e não muito formal
+- Seja proativa em fazer perguntas relevantes
+- Demonstre empatia quando apropriado
+- Mantenha as respostas concisas mas informativas`;
+  });
+
+  // Carregar configurações salvas
+  useEffect(() => {
+    const saved = localStorage.getItem('aline-personality');
+    if (saved) {
+      setPersonalityInstructions(saved);
+    }
+  }, []);
+
+  const handleSavePersonality = () => {
+    localStorage.setItem('aline-personality', personalityInstructions);
+    setIsEditingPersonality(false);
+    toast({
+      title: "Personalidade salva!",
+      description: "As novas instruções da Aline foram aplicadas. Reconecte para aplicar as mudanças.",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    const saved = localStorage.getItem('aline-personality');
+    if (saved) {
+      setPersonalityInstructions(saved);
+    }
+    setIsEditingPersonality(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,24 +114,73 @@ const ConfigurationsPage = () => {
             </CardContent>
           </Card>
 
-          {/* Personalidade */}
+          {/* Personalidade - Agora Editável */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Personalidade
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Personalidade
+                </div>
+                {!isEditingPersonality && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingPersonality(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                    Editar
+                  </Button>
+                )}
               </CardTitle>
               <CardDescription>
-                Como a Aline se comporta
+                Como a Aline se comporta e responde
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="font-medium mb-2">Instruções Atuais</div>
-                <div className="text-sm text-muted-foreground">
-                  "Você é a Aline, uma assistente de voz inteligente que conversa em português brasileiro. Seja natural, amigável e responda de forma clara e concisa."
+              {isEditingPersonality ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="personality">Instruções da Personalidade</Label>
+                    <Textarea
+                      id="personality"
+                      value={personalityInstructions}
+                      onChange={(e) => setPersonalityInstructions(e.target.value)}
+                      placeholder="Descreva como a Aline deve se comportar..."
+                      rows={12}
+                      className="font-mono text-sm resize-vertical"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Descreva em detalhes como a Aline deve se comportar, seu tom de voz, 
+                      estilo de comunicação e instruções específicas.
+                    </p>
+                  </div>
+                  
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleSavePersonality}
+                      className="flex items-center gap-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      Salvar
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <div className="font-medium mb-2">Instruções Atuais</div>
+                  <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {personalityInstructions}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

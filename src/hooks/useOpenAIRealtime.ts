@@ -54,11 +54,14 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
         addEvent('connection.established', { url: wsUrl });
 
         // Configurar sessão
+        const savedPersonality = localStorage.getItem('aline-personality');
+        const instructions = savedPersonality || 'Você é a Aline, uma assistente de voz inteligente que conversa em português brasileiro. Seja natural, amigável e responda de forma clara e concisa.';
+        
         const sessionConfig = {
           type: 'session.update',
           session: {
             modalities: ['text', 'audio'],
-            instructions: 'Você é a Aline, uma assistente de voz inteligente que conversa em português brasileiro. Seja natural, amigável e responda de forma clara e concisa.',
+            instructions: instructions,
             voice: 'alloy',
             input_audio_format: 'pcm16',
             output_audio_format: 'pcm16',
