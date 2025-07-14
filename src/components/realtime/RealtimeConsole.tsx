@@ -21,13 +21,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useOpenAIRealtime } from "@/hooks/useOpenAIRealtime";
 import AlineVisualizer from "./AlineVisualizer";
-import { useAlineConfig } from "@/contexts/AlineConfigContext";
 import { useNavigate } from "react-router-dom";
 
 const RealtimeConsole = () => {
   const API_KEY = "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";
   
-  const { config } = useAlineConfig();
   const navigate = useNavigate();
   const [vadMode, setVadMode] = useState(true);
   const [showLogs, setShowLogs] = useState(true);
@@ -45,7 +43,6 @@ const RealtimeConsole = () => {
     stopRecording,
   } = useOpenAIRealtime({
     apiKey: API_KEY,
-    config,
     onEvent: (event) => {
       console.log('Realtime event:', event);
       // Simular nível de áudio baseado nos eventos
