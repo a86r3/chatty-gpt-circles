@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import VoiceChatButton from "./VoiceChatButton";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -16,6 +17,7 @@ const ChatInput = ({
   placeholder = "Digite sua mensagem..." 
 }: ChatInputProps) => {
   const [message, setMessage] = useState("");
+  const [isAutoMode, setIsAutoMode] = useState(false);
 
   const handleSend = () => {
     const trimmedMessage = message.trim();
@@ -32,9 +34,25 @@ const ChatInput = ({
     }
   };
 
+  const handleVoiceTranscription = (transcription: string) => {
+    setMessage(prev => prev + " " + transcription);
+  };
+
+  const toggleAutoMode = () => {
+    setIsAutoMode(prev => !prev);
+  };
+
   return (
     <div className="p-4 border-t bg-chat-sidebar/50 backdrop-blur-sm">
-      <div className="flex gap-2 items-end max-w-4xl mx-auto">
+      <div className="flex gap-4 items-end max-w-4xl mx-auto">
+        {/* Botão de voz */}
+        <VoiceChatButton 
+          onTranscription={handleVoiceTranscription}
+          disabled={disabled}
+          isAutoMode={isAutoMode}
+          onToggleAutoMode={toggleAutoMode}
+        />
+
         <div className="flex-1 relative">
           <Textarea
             value={message}
@@ -66,6 +84,16 @@ const ChatInput = ({
             )}
           </Button>
         </div>
+      </div>
+      
+      {/* Instruções de uso */}
+      <div className="text-center mt-2">
+        <p className="text-xs text-muted-foreground">
+          {isAutoMode 
+            ? "Modo automático: Clique para iniciar/parar gravação" 
+            : "Modo manual: Mantenha pressionado para gravar"
+          }
+        </p>
       </div>
     </div>
   );
