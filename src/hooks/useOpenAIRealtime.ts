@@ -36,37 +36,11 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
 
   const connectRealtime = useCallback(async () => {
     try {
-      // Primeiro, tentar obter URL assinada (se disponível)
-      let wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
+      // Conectar diretamente ao WebSocket com autenticação na URL
+      const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
       
-      try {
-        // Tentar obter uma sessão assinada
-        const sessionResponse = await fetch('https://api.openai.com/v1/realtime/sessions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-realtime-preview-2024-10-01',
-            voice: 'alloy'
-          })
-        });
-
-        if (sessionResponse.ok) {
-          const session = await sessionResponse.json();
-          if (session.client_secret?.value) {
-            wsUrl = session.client_secret.value;
-          }
-        }
-      } catch (error) {
-        console.log('Session creation failed, using direct WebSocket');
-      }
-
-      // Conectar WebSocket
-      const ws = new WebSocket(wsUrl);
+      const ws = new WebSocket(wsUrl, [`Bearer ${apiKey}`, 'realtime=v1']);
       
-      // Adicionar cabeçalho de autorização após conexão (workaround)
       ws.onopen = () => {
         console.log('Connected to OpenAI Realtime');
         setIsConnected(true);
