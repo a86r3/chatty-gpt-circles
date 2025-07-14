@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface AlineConfig {
   // System Settings
@@ -59,20 +59,38 @@ interface AlineConfigContextType {
 const AlineConfigContext = createContext<AlineConfigContextType | undefined>(undefined);
 
 export const AlineConfigProvider = ({ children }: { children: ReactNode }) => {
-  const [config, setConfig] = useState<AlineConfig>(() => {
-    const savedConfig = localStorage.getItem('aline-config');
-    return savedConfig ? { ...defaultConfig, ...JSON.parse(savedConfig) } : defaultConfig;
-  });
+  const [config, setConfig] = useState<AlineConfig>(defaultConfig);
+
+  React.useEffect(() => {
+    // Carregar configurações do localStorage após o componente montar
+    try {
+      const savedConfig = localStorage.getItem('aline-config');
+      if (savedConfig) {
+        const parsed = JSON.parse(savedConfig);
+        setConfig({ ...defaultConfig, ...parsed });
+      }
+    } catch (error) {
+      console.warn('Failed to load saved config:', error);
+    }
+  }, []);
 
   const updateConfig = (updates: Partial<AlineConfig>) => {
     const newConfig = { ...config, ...updates };
     setConfig(newConfig);
-    localStorage.setItem('aline-config', JSON.stringify(newConfig));
+    try {
+      localStorage.setItem('aline-config', JSON.stringify(newConfig));
+    } catch (error) {
+      console.warn('Failed to save config:', error);
+    }
   };
 
   const resetConfig = () => {
     setConfig(defaultConfig);
-    localStorage.setItem('aline-config', JSON.stringify(defaultConfig));
+    try {
+      localStorage.setItem('aline-config', JSON.stringify(defaultConfig));
+    } catch (error) {
+      console.warn('Failed to save default config:', error);
+    }
   };
 
   return (
