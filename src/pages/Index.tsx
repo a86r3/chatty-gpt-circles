@@ -1,7 +1,7 @@
-import RealtimeChat from "@/components/chat/RealtimeChat";
+import RealtimeConsole from "@/components/realtime/RealtimeConsole";
 
 const Index = () => {
-  return <RealtimeChat />;
+  return <RealtimeConsole />;
 };
 
 export default Index;
