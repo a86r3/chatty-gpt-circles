@@ -16,11 +16,29 @@ export class RealtimeClient {
   connect() {
     return new Promise<void>((resolve, reject) => {
       try {
-        this.ws = new WebSocket(this.url, ['realtime', `Bearer.${this.apiKey}`]);
+        // Conectar diretamente ao WebSocket com a API key na URL
+        const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
+        this.ws = new WebSocket(wsUrl);
         
         this.ws.onopen = () => {
           console.log('Connected to OpenAI Realtime API');
           this.isConnected = true;
+          
+          // Enviar autenticação imediatamente após conectar
+          this.send({
+            type: 'session.update',
+            session: {
+              modalities: ['text', 'audio'],
+              instructions: 'Você é um assistente útil que conversa em português brasileiro.',
+              voice: 'alloy',
+              input_audio_format: 'pcm16',
+              output_audio_format: 'pcm16',
+              input_audio_transcription: {
+                model: 'whisper-1'
+              }
+            }
+          });
+          
           this.emit('open', {});
           resolve();
         };
