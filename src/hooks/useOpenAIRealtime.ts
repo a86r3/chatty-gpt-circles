@@ -24,6 +24,9 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
   const [currentTranscription, setCurrentTranscription] = useState('');
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
 
+  const onEventRef = useRef(onEvent);
+  onEventRef.current = onEvent;
+
   const addEvent = useCallback((type: string, data: any) => {
     const event: RealtimeEvent = {
       type,
@@ -31,8 +34,8 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
       timestamp: new Date().toLocaleTimeString()
     };
     setEvents(prev => [...prev, event]);
-    onEvent?.(event);
-  }, [onEvent]);
+    onEventRef.current?.(event);
+  }, []);
 
   const connectRealtime = useCallback(async () => {
     try {
