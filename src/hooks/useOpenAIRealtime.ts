@@ -36,15 +36,37 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
 
   const connectRealtime = useCallback(async () => {
     try {
-      // Conectar diretamente ao WebSocket com autenticação na URL
-      const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
+      // Obter uma sessão assinada da OpenAI
+      const sessionResponse = await fetch('https://api.openai.com/v1/realtime/sessions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-realtime-preview-2024-10-01',
+          voice: 'alloy'
+        })
+      });
+
+      if (!sessionResponse.ok) {
+        throw new Error(`Failed to create session: ${sessionResponse.status}`);
+      }
+
+      const session = await sessionResponse.json();
+      console.log('Session created:', session);
       
-      const ws = new WebSocket(wsUrl, [`Bearer ${apiKey}`, 'realtime=v1']);
+      if (!session.client_secret?.value) {
+        throw new Error('No client secret received');
+      }
+
+      // Conectar usando a URL assinada
+      const ws = new WebSocket(session.client_secret.value);
       
       ws.onopen = () => {
         console.log('Connected to OpenAI Realtime');
         setIsConnected(true);
-        addEvent('connection.established', { url: wsUrl });
+        addEvent('connection.established', { url: session.client_secret.value });
 
         // Configurar sessão
         ws.send(JSON.stringify({
