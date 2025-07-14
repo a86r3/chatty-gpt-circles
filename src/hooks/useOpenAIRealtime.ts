@@ -18,6 +18,8 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+  const audioQueueRef = useRef<string[]>([]);
+  const isPlayingRef = useRef(false);
   
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -173,24 +175,46 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
     }
   }, [addEvent, toast]);
 
-  const playAudioDelta = useCallback(async (delta: string) => {
+  const processAudioQueue = useCallback(async () => {
+    if (isPlayingRef.current || audioQueueRef.current.length === 0) {
+      return;
+    }
+
+    isPlayingRef.current = true;
+    
     try {
       if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         audioContextRef.current = new AudioContext({ sampleRate: 24000 });
       }
 
-      // Decodificar base64 para ArrayBuffer
-      const binaryString = atob(delta);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
+      // Combinar vários deltas em um buffer maior para reduzir fragmentação
+      const combinedDeltas = audioQueueRef.current.splice(0, Math.min(5, audioQueueRef.current.length));
+      let totalBytes = 0;
+
+      // Calcular tamanho total necessário
+      const decodedBuffers = combinedDeltas.map(delta => {
+        const binaryString = atob(delta);
+        totalBytes += binaryString.length;
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes;
+      });
+
+      // Combinar em um único buffer
+      const combinedBytes = new Uint8Array(totalBytes);
+      let offset = 0;
+      decodedBuffers.forEach(buffer => {
+        combinedBytes.set(buffer, offset);
+        offset += buffer.length;
+      });
 
       // Converter PCM16 para AudioBuffer
-      const audioBuffer = audioContextRef.current.createBuffer(1, bytes.length / 2, 24000);
+      const audioBuffer = audioContextRef.current.createBuffer(1, combinedBytes.length / 2, 24000);
       const channelData = audioBuffer.getChannelData(0);
       
-      const dataView = new DataView(bytes.buffer);
+      const dataView = new DataView(combinedBytes.buffer);
       for (let i = 0; i < channelData.length; i++) {
         channelData[i] = dataView.getInt16(i * 2, true) / 32768;
       }
@@ -199,13 +223,29 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
       const source = audioContextRef.current.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioContextRef.current.destination);
+      
+      source.onended = () => {
+        isPlayingRef.current = false;
+        // Processar próximo batch se houver
+        setTimeout(() => processAudioQueue(), 10);
+      };
+      
       source.start();
 
     } catch (error) {
       console.error('Audio playback error:', error);
       addEvent('audio.playback.error', { error: error.message });
+      isPlayingRef.current = false;
     }
   }, [addEvent]);
+
+  const playAudioDelta = useCallback(async (delta: string) => {
+    // Adicionar à fila de áudio
+    audioQueueRef.current.push(delta);
+    
+    // Processar fila se não estiver tocando
+    processAudioQueue();
+  }, [processAudioQueue]);
 
   const startRecording = useCallback(async () => {
     if (!isConnected || !wsRef.current) {
@@ -349,6 +389,10 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
     if (wsRef.current) {
       wsRef.current.close();
     }
+
+    // Limpar fila de áudio
+    audioQueueRef.current = [];
+    isPlayingRef.current = false;
 
     setIsConnected(false);
     setIsRecording(false);
