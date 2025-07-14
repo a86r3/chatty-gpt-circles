@@ -103,18 +103,18 @@ const RealtimeConsole = () => {
 
   return (
     <div className="h-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b bg-card">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <div className="w-4 h-4 rounded-full bg-primary/20" />
+      {/* Header - Responsivo */}
+      <div className="p-2 sm:p-4 border-b bg-card">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-primary/20" />
             </div>
-            <h1 className="text-lg font-medium">Aline Realtime Console</h1>
+            <h1 className="text-sm sm:text-lg font-medium">Aline</h1>
           </div>
           
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-2">
               <span>Show Logs</span>
               <Switch checked={showLogs} onCheckedChange={setShowLogs} />
               {showLogs ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -123,36 +123,38 @@ const RealtimeConsole = () => {
               variant="ghost"
               size="sm"
               onClick={() => navigate('/configurations')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1 sm:gap-2"
             >
-              <Settings className="h-4 w-4" />
-              Configurações
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Configurações</span>
             </Button>
-            <span>api key: sk-...</span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex relative">
-        {/* Visualizador Aline Fixo */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-          <div className="w-64 h-64">
-            <AlineVisualizer 
-              isRecording={isRecording} 
-              isConnected={isConnected} 
-              audioLevel={audioLevel} 
-            />
+      <div className="flex-1 flex flex-col lg:flex-row relative">
+        {/* Layout Mobile - Stack Vertical */}
+        <div className="flex-1 flex flex-col lg:hidden">
+          {/* Visualizador Principal Mobile */}
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div className="w-48 h-48 sm:w-64 sm:h-64">
+              <AlineVisualizer 
+                isRecording={isRecording} 
+                isConnected={isConnected} 
+                audioLevel={audioLevel} 
+              />
+            </div>
           </div>
           
-          {/* Status e Transcrição */}
-          <div className="text-center space-y-4 mt-8">
-            <div className="flex items-center justify-center gap-2 text-lg">
+          {/* Status Mobile */}
+          <div className="text-center space-y-2 px-4 pb-4">
+            <div className="flex items-center justify-center gap-2">
               <div className={cn(
-                "w-3 h-3 rounded-full",
+                "w-2 h-2 sm:w-3 sm:h-3 rounded-full",
                 isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
               )} />
               <span className={cn(
-                "font-medium",
+                "text-sm sm:text-base font-medium",
                 isConnected ? "text-green-600" : "text-red-600"
               )}>
                 {isConnected ? "Aline Online" : "Aline Offline"}
@@ -160,26 +162,129 @@ const RealtimeConsole = () => {
             </div>
             
             {currentTranscription && (
-              <div className="p-4 bg-card border rounded-lg max-w-md">
-                <p className="text-sm font-mono text-center">
+              <div className="p-3 bg-card border rounded-lg mx-4">
+                <p className="text-xs sm:text-sm font-mono text-center">
                   "{currentTranscription}"
                 </p>
               </div>
             )}
             
             {!currentTranscription && isConnected && (
-              <p className="text-muted-foreground text-sm">
-                {isRecording ? "Listening..." : "Ready to listen"}
+              <p className="text-muted-foreground text-xs sm:text-sm">
+                {isRecording ? "Ouvindo..." : "Pronta para ouvir"}
               </p>
             )}
           </div>
+          
+          {/* Controles Mobile */}
+          <div className="p-4 bg-card border-t">
+            <div className="space-y-3">
+              {/* Toggle Logs Mobile */}
+              <div className="flex items-center justify-between sm:hidden">
+                <span className="text-sm">Mostrar Logs</span>
+                <div className="flex items-center gap-2">
+                  <Switch checked={showLogs} onCheckedChange={setShowLogs} />
+                  {showLogs ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </div>
+              </div>
+              
+              {/* Conexão */}
+              <Button
+                variant={isConnected ? "destructive" : "default"}
+                size="lg"
+                onClick={handleConnect}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                {isConnected ? (
+                  <>
+                    <PhoneOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                    Desconectar
+                  </>
+                ) : (
+                  <>
+                    <Phone className="h-4 w-4 sm:h-5 sm:w-5" />
+                    Conectar & Gravar
+                  </>
+                )}
+              </Button>
+
+              {/* Status Gravação */}
+              {isConnected && (
+                <div className="text-center">
+                  <Button
+                    onClick={isRecording ? stopRecording : startRecording}
+                    disabled={!isConnected}
+                    variant={isRecording ? "destructive" : "outline"}
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    {isRecording ? (
+                      <>
+                        <MicOff className="h-4 w-4" />
+                        Parar Gravação
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="h-4 w-4" />
+                        Iniciar Gravação
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Área de fundo */}
-        <div className="flex-1 bg-gradient-to-br from-background to-muted/30"></div>
+        {/* Layout Desktop - Horizontal */}
+        <div className="hidden lg:flex flex-1 relative">
+          {/* Visualizador Aline Fixo Desktop */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+            <div className="w-64 h-64">
+              <AlineVisualizer 
+                isRecording={isRecording} 
+                isConnected={isConnected} 
+                audioLevel={audioLevel} 
+              />
+            </div>
+            
+            {/* Status e Transcrição Desktop */}
+            <div className="text-center space-y-4 mt-8">
+              <div className="flex items-center justify-center gap-2 text-lg">
+                <div className={cn(
+                  "w-3 h-3 rounded-full",
+                  isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
+                )} />
+                <span className={cn(
+                  "font-medium",
+                  isConnected ? "text-green-600" : "text-red-600"
+                )}>
+                  {isConnected ? "Aline Online" : "Aline Offline"}
+                </span>
+              </div>
+              
+              {currentTranscription && (
+                <div className="p-4 bg-card border rounded-lg max-w-md">
+                  <p className="text-sm font-mono text-center">
+                    "{currentTranscription}"
+                  </p>
+                </div>
+              )}
+              
+              {!currentTranscription && isConnected && (
+                <p className="text-muted-foreground text-sm">
+                  {isRecording ? "Ouvindo..." : "Pronta para ouvir"}
+                </p>
+              )}
+            </div>
+          </div>
 
-        {/* Painel de Controles */}
-        <div className="w-80 bg-card border-l flex flex-col">
+          {/* Área de fundo Desktop */}
+          <div className="flex-1 bg-gradient-to-br from-background to-muted/30"></div>
+        </div>
+
+        {/* Painel de Controles Desktop */}
+        <div className="hidden lg:flex w-80 bg-card border-l flex-col">
           {/* Controles Principais */}
           <div className="p-6 border-b">
             <h3 className="text-lg font-medium mb-4">Controls</h3>
@@ -202,7 +307,7 @@ const RealtimeConsole = () => {
                   ) : (
                     <>
                       <Phone className="h-5 w-5" />
-                      Connect
+                      Connect & Record
                     </>
                   )}
                 </Button>
@@ -317,6 +422,33 @@ const RealtimeConsole = () => {
             </div>
           )}
         </div>
+
+        {/* Logs Mobile - Collapsible */}
+        {showLogs && (
+          <div className="lg:hidden bg-card border-t max-h-48 overflow-hidden">
+            <div className="p-2 border-b bg-muted/30">
+              <h3 className="text-xs font-medium">Event Logs</h3>
+            </div>
+            
+            <ScrollArea className="h-40 p-2" ref={eventsScrollRef}>
+              <div className="space-y-1 font-mono text-xs">
+                {events.slice(-50).map((event, index) => (
+                  <div key={index} className="flex items-start gap-1">
+                    <span className="text-muted-foreground w-8 shrink-0 text-xs">
+                      {event.timestamp.slice(-8)}
+                    </span>
+                    <span className={cn("w-2 shrink-0", getEventColor(event.type))}>
+                      {getEventIcon(event.type)}
+                    </span>
+                    <span className={cn("flex-1 text-xs", getEventColor(event.type))}>
+                      {formatEventType(event.type)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
       </div>
     </div>
   );
