@@ -24,7 +24,7 @@ import AlineVisualizer from "./AlineVisualizer";
 import { useNavigate } from "react-router-dom";
 
 const RealtimeConsole = () => {
-  const API_KEY = "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";
+  const API_KEY = "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";
   
   const navigate = useNavigate();
   const [vadMode, setVadMode] = useState(true);
