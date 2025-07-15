@@ -23,8 +23,10 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
   
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isAISpeaking, setIsAISpeaking] = useState(false);
   const [currentTranscription, setCurrentTranscription] = useState('');
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
+  const [recordingPaused, setRecordingPaused] = useState(false);
 
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
@@ -151,19 +153,31 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
         addEvent('transcription.completed', { transcript: message.transcript });
         break;
 
+      case 'response.created':
+        setIsAISpeaking(true);
+        setRecordingPaused(true);
+        addEvent('ai.speech.started', {});
+        break;
+
+      case 'response.audio_transcript.delta':
       case 'response.audio.delta':
         if (message.delta) {
+          setIsAISpeaking(true);
           playAudioDelta(message.delta);
           addEvent('audio.delta.received', { size: message.delta.length });
         }
         break;
 
       case 'response.text.delta':
+        setIsAISpeaking(true);
         addEvent('text.delta.received', { delta: message.delta });
         break;
 
       case 'response.done':
+        setIsAISpeaking(false);
+        setRecordingPaused(false);
         addEvent('response.completed', message.response);
+        addEvent('ai.speech.ended', {});
         break;
 
       case 'error':
@@ -305,7 +319,7 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
         workletNodeRef.current = new AudioWorkletNode(audioContextRef.current, 'realtime-processor');
 
         workletNodeRef.current.port.onmessage = (event) => {
-          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && !recordingPaused) {
             const base64 = btoa(String.fromCharCode(...new Uint8Array(event.data)));
             wsRef.current.send(JSON.stringify({
               type: 'input_audio_buffer.append',
@@ -324,7 +338,7 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
         const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
 
         processor.onaudioprocess = (event) => {
-          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && !recordingPaused) {
             const inputBuffer = event.inputBuffer;
             const inputData = inputBuffer.getChannelData(0);
             
@@ -437,6 +451,7 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
     // Estado
     isConnected,
     isRecording,
+    isAISpeaking,
     currentTranscription,
     events,
     

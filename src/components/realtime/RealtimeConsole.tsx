@@ -35,6 +35,7 @@ const RealtimeConsole = () => {
   const {
     isConnected,
     isRecording,
+    isAISpeaking,
     currentTranscription,
     events,
     connectRealtime,
@@ -171,7 +172,7 @@ const RealtimeConsole = () => {
             
             {!currentTranscription && isConnected && (
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {isRecording ? "Ouvindo..." : "Pronta para ouvir"}
+                {isAISpeaking ? "Aline está falando..." : isRecording ? "Ouvindo..." : "Pronta para ouvir"}
               </p>
             )}
           </div>
@@ -273,7 +274,7 @@ const RealtimeConsole = () => {
               
               {!currentTranscription && isConnected && (
                 <p className="text-muted-foreground text-sm">
-                  {isRecording ? "Ouvindo..." : "Pronta para ouvir"}
+                  {isAISpeaking ? "Aline está falando..." : isRecording ? "Ouvindo..." : "Pronta para ouvir"}
                 </p>
               )}
             </div>
