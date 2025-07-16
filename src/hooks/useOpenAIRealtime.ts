@@ -43,6 +43,7 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
 
   const connectRealtime = useCallback(async () => {
     try {
+      console.log('Tentando conectar com API key:', apiKey ? 'Presente' : 'Não encontrada');
       const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
       const ws = new WebSocket(wsUrl, [
         'realtime',
@@ -102,7 +103,7 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
         addEvent('connection.error', { error });
         toast({
           title: 'Erro de conexão',
-          description: 'Falha ao conectar com Realtime API',
+          description: 'Falha ao conectar com Realtime API. Verifique sua chave API.',
           variant: 'destructive'
         });
       };
@@ -112,6 +113,21 @@ export const useOpenAIRealtime = ({ apiKey, onEvent }: UseOpenAIRealtimeProps) =
         setIsConnected(false);
         setIsRecording(false);
         addEvent('connection.closed', { code: event.code, reason: event.reason });
+        
+        if (event.code === 1008) {
+          console.error('Código 1008: Possível problema com API key');
+          toast({
+            title: 'Erro de autenticação',
+            description: 'Chave API inválida ou expirada',
+            variant: 'destructive'
+          });
+        } else if (event.code !== 1000) {
+          toast({
+            title: 'Conexão perdida',
+            description: `Código: ${event.code} - ${event.reason || 'Motivo desconhecido'}`,
+            variant: 'destructive'
+          });
+        }
       };
 
       wsRef.current = ws;
