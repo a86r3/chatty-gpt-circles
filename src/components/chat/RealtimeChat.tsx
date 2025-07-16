@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { useOpenAIRealtime } from "@/hooks/useOpenAIRealtime";
 
 const RealtimeChat = () => {
-  const API_KEY = "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";
+  const API_KEY = "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";
   
   const [inputText, setInputText] = useState("");
   const [showEvents, setShowEvents] = useState(true);
